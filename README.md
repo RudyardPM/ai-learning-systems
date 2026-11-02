@@ -2,7 +2,11 @@
 
 Most training ends when the session does. People nod, go back to their desks, and do what they did before. I build learning systems that keep working after I'm gone, and lately a lot of that work has been building AI agents ("skills") that coach, review, and practice alongside people in their real work.
 
-This repo holds four of them. Each folder has the actual skill file (`SKILL.md`, the instructions the AI follows) and a README that explains the problem it solves and why I designed it the way I did.
+This repo holds an assessment and four of those skills. Each folder has the actual source (a `SKILL.md` with the instructions the AI follows, or the assessment page) and a README that explains the problem it solves and why I designed it the way I did.
+
+## Start here: the assessment
+
+**[AI Learning Mental Models](ai-learning-mental-models/)**: a 4-minute self-assessment built around one moment. When AI hands you an answer, what do you do next? 21 real-world scenarios show which of seven mental models you lean on most, and which one you barely use. **[Take it here](https://claude.ai/artifact/DvfQsp2fDayKfgEkwbZ4g4).**
 
 ## The skills
 
@@ -19,7 +23,9 @@ The first two are a pair. I built a library of job aids for a product organizati
 
 The coach and the tutor are both practice environments. One is for PMs doing real work with AI. The other is for PMs preparing to interview.
 
-## The design principles underneath all four
+The assessment comes first. It shows which habits a person or team leans on and which they skip, and the coach then practices the missing ones on real work.
+
+## The design principles underneath all of it
 
 **Reinforcement over one-time events.** A workshop is race day. These tools are the training base: something people can return to at the moment they need it.
 
