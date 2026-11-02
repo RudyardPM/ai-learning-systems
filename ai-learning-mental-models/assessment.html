@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI Learning Mental Models</title>
+<style>
+  :root {
+    --ink: #1C2B3A;
+    --ink-soft: #3B4A5A;
+    --paper: #FAF8F4;
+    --paper-raised: #F2EEE5;
+    --brass: #B8935F;
+    --brass-deep: #8F6D40;
+    --line: #DDD6C7;
+    --warn-bg: #FBF0E4;
+    --warn-line: #D9A662;
+    --warn-text: #7A4E1E;
+    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #EFE9DD;
+      --ink-soft: #C7BFAF;
+      --paper: #14181D;
+      --paper-raised: #1D2229;
+      --brass: #D3AD78;
+      --brass-deep: #E6C795;
+      --line: #333A42;
+      --warn-bg: #2A2015;
+      --warn-line: #B98A4A;
+      --warn-text: #E8C696;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #EFE9DD;
+    --ink-soft: #C7BFAF;
+    --paper: #14181D;
+    --paper-raised: #1D2229;
+    --brass: #D3AD78;
+    --brass-deep: #E6C795;
+    --line: #333A42;
+    --warn-bg: #2A2015;
+    --warn-line: #B98A4A;
+    --warn-text: #E8C696;
+  }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+    min-height: 100%;
+  }
+
+  .brand {
+    font-family: var(--serif);
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    color: var(--brass-deep);
+    margin-bottom: 6px;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: 34px;
+    line-height: 1.18;
+    font-weight: 400;
+    margin: 0 0 14px;
+    color: var(--ink);
+  }
+
+  .lede {
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin: 0 0 32px;
+    max-width: 54ch;
+  }
+
+  .start-btn {
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 600;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 3px;
+    padding: 14px 28px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .start-btn:hover { background: var(--brass-deep); }
+  .start-btn:disabled { opacity: 0.5; cursor: default; }
+  .start-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+
+  .meta-note {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 16px;
+  }
+
+  /* Progress */
+  .progress-track {
+    height: 2px;
+    background: var(--line);
+    border-radius: 2px;
+    margin-bottom: 36px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--brass);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+  .progress-label {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+    letter-spacing: 0.01em;
+  }
+
+  .scenario-prompt {
+    font-family: var(--serif);
+    font-size: 22px;
+    line-height: 1.4;
+    margin: 0 0 28px;
+    color: var(--ink);
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .option-btn {
+    text-align: left;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 16px 18px;
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .option-btn:hover {
+    border-color: var(--brass);
+    background: var(--paper);
+  }
+  .option-btn:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 2px;
+  }
+  .option-btn.selected {
+    border-color: var(--brass);
+    background: var(--paper);
+    box-shadow: inset 0 0 0 1px var(--brass);
+  }
+
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 32px;
+  }
+  .link-btn {
+    background: none;
+    border: none;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    padding: 8px 0;
+  }
+  .link-btn:hover { color: var(--ink); }
+  .link-btn:disabled { opacity: 0.35; cursor: default; }
+
+  /* Capture screen */
+  .warn-banner {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--warn-text);
+    margin-bottom: 28px;
+  }
+  .field-group {
+    margin-bottom: 18px;
+  }
+  .field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .field-input {
+    width: 100%;
+    font-family: var(--sans);
+    font-size: 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--paper-raised);
+    color: var(--ink);
+  }
+  .field-input:focus {
+    outline: none;
+    border-color: var(--brass);
+  }
+  .field-error {
+    font-size: 13px;
+    color: var(--warn-text);
+    margin-top: 6px;
+    display: none;
+  }
+  .field-error.visible { display: block; }
+
+  /* Results */
+  .results-header {
+    font-family: var(--serif);
+    font-size: 15px;
+    color: var(--brass-deep);
+    margin-bottom: 6px;
+  }
+  .archetype-name {
+    font-family: var(--serif);
+    font-size: 38px;
+    line-height: 1.15;
+    margin: 0 0 6px;
+  }
+  .archetype-tag {
+    font-size: 17px;
+    color: var(--ink-soft);
+    margin: 0 0 22px;
+  }
+  .archetype-desc {
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    margin: 0 0 36px;
+    max-width: 56ch;
+  }
+
+  .growth-card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--brass);
+    border-radius: 4px;
+    padding: 22px 24px;
+    margin-bottom: 40px;
+  }
+  .growth-eyebrow {
+    font-size: 13px;
+    color: var(--brass-deep);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .growth-name {
+    font-family: var(--serif);
+    font-size: 22px;
+    margin: 0 0 10px;
+  }
+  .growth-body {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+  }
+
+  .rank-list {
+    list-style: none;
+    margin: 0 0 40px;
+    padding: 0;
+  }
+  .rank-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .rank-row:last-child { border-bottom: none; }
+  .rank-num {
+    font-family: var(--serif);
+    font-size: 14px;
+    color: var(--ink-soft);
+    width: 18px;
+    flex-shrink: 0;
+  }
+  .rank-name {
+    font-size: 15px;
+    font-weight: 600;
+    flex: 1;
+  }
+  .rank-bar-track {
+    width: 100px;
+    height: 5px;
+    background: var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .rank-bar-fill {
+    height: 100%;
+    background: var(--brass);
+    border-radius: 3px;
+  }
+
+  .cta-block {
+    border-top: 1px solid var(--line);
+    padding-top: 28px;
+  }
+  .cta-text {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+  }
+  .actions-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .secondary-btn {
+    font-family: var(--sans);
+    font-size: 14px;
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 11px 20px;
+    cursor: pointer;
+  }
+  .secondary-btn:hover { border-color: var(--brass); }
+  .secondary-btn.primary {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .secondary-btn.primary:hover { background: var(--brass-deep); border-color: var(--brass-deep); }
+
+  .save-status {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 10px;
+    min-height: 16px;
+  }
+
+  [data-view] { display: none; }
+  [data-view].active { display: block; }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 28px; }
+    .archetype-name { font-size: 30px; }
+    .wrap { padding: 32px 18px 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section data-view="intro" class="active">
+    <div class="brand">A Self-Assessment · Learning in an AI World</div>
+    <h1>When AI hands you an answer, what do you do next?</h1>
+    <p class="lede">Most people have never had to ask that question before. Now it's one of the most revealing things about how you think. Your instinctive reaction to that moment says more about how well you'll adapt to an AI-driven world than almost anything else about you — and most people have no idea what their instinct actually is.</p>
+    <p class="lede">Twenty-one quick, real-world scenarios. No jargon to learn first, no right answers to study for — just your honest gut reaction. About four minutes, and what comes back is a surprisingly specific read on how your mind works.</p>
+    <button class="start-btn" id="startBtn">Find out</button>
+  </section>
+
+  <section data-view="quiz">
+    <div class="progress-label" id="progressLabel">Question 1 of 21</div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <p class="scenario-prompt" id="scenarioPrompt"></p>
+    <div class="options" id="optionsContainer"></div>
+    <div class="nav-row">
+      <button class="link-btn" id="backBtn">← Back</button>
+      <button class="link-btn" id="skipBtn">Skip this one</button>
+    </div>
+  </section>
+
+  <section data-view="capture">
+    <div class="brand">Almost there</div>
+    <h1>One last step before your results</h1>
+    <p class="lede" id="skipWarningIntro" style="display:none;"></p>
+    <div class="warn-banner" id="skipWarningBanner" style="display:none;"></div>
+    <div class="field-group">
+      <label class="field-label" for="nameInput">Name</label>
+      <input class="field-input" type="text" id="nameInput" autocomplete="name" placeholder="Your name">
+      <div class="field-error" id="nameError">Please enter your name.</div>
+    </div>
+    <div class="field-group">
+      <label class="field-label" for="emailInput">Email</label>
+      <input class="field-input" type="email" id="emailInput" autocomplete="email" placeholder="you@example.com">
+      <div class="field-error" id="emailError">Please enter a valid email address.</div>
+    </div>
+    <button class="start-btn" id="captureSubmitBtn">See my results</button>
+    <div class="meta-note">Your name and email are used only to send you a more detailed read on your results, if you ask for one.</div>
+  </section>
+
+  <section data-view="results">
+    <div class="results-header">Your dominant mental model</div>
+    <h2 class="archetype-name" id="archName"></h2>
+    <p class="archetype-tag" id="archTag"></p>
+    <p class="archetype-desc" id="archDesc"></p>
+
+    <div class="growth-card">
+      <div class="growth-eyebrow">YOUR LEAST-PRACTICED MODEL</div>
+      <h3 class="growth-name" id="growthName"></h3>
+      <p class="growth-body" id="growthBody"></p>
+    </div>
+
+    <div class="results-header" style="margin-bottom:14px;">Your full profile</div>
+    <ul class="rank-list" id="rankList"></ul>
+
+    <div class="cta-block">
+      <p class="cta-text">Want a more personalized read on your results, or want to talk through what this means for your team? Reach out — I read every message.</p>
+      <div class="actions-row">
+        <button class="secondary-btn primary" id="downloadBtn">Download my results</button>
+        <button class="secondary-btn" id="retakeBtn">Retake the assessment</button>
+      </div>
+      <div class="save-status" id="saveStatus"></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Hidden relay to a Google Form so submissions land in a Sheet.
+     Fill in GOOGLE_FORM_ACTION_URL and the entry IDs below once the form exists.
+     Until then, this silently no-ops and the page works normally. -->
+<iframe name="hidden_relay_frame" id="hiddenRelayFrame" style="display:none" aria-hidden="true"></iframe>
+<form id="relayForm" method="POST" target="hidden_relay_frame" style="display:none">
+  <input type="text" name="entry.000000001" id="relayName">
+  <input type="text" name="entry.000000002" id="relayEmail">
+  <input type="text" name="entry.000000003" id="relayDominant">
+  <input type="text" name="entry.000000004" id="relayLeastPracticed">
+  <input type="text" name="entry.000000005" id="relayFullProfile">
+  <input type="text" name="entry.000000006" id="relaySkippedCount">
+</form>
+
+<script>
+(function() {
+  const DATA = {"MODELS":{"auditor":{"name":"The Auditor","fromModel":"Oracle vs. Auditor","short":"You verify before you trust.","description":"You treat AI output as a claim to check, not an answer to accept. Before something goes further, you look for the seam — the place most likely to be wrong — and you check it.","growth":"Strengthening this means building verification into your rhythm even when nothing looks obviously wrong — the errors that cost the most are usually the ones that looked fine."},"exoskeleton":{"name":"The Trainer","fromModel":"The Exoskeleton Test","short":"You ask whether a tool is building your capability or replacing it.","description":"You notice the difference between a tool that makes you stronger over time and one that just makes you faster while you're using it — and you choose accordingly.","growth":"Strengthening this means periodically testing yourself without the tool — the only real way to know if the muscle is still there."},"strain":{"name":"The Builder of Struggle","fromModel":"The Training Wheels Trap","short":"You protect the friction that makes learning stick.","description":"You resist the urge to smooth every difficulty out of a task, because you know some friction is what makes a skill durable rather than borrowed.","growth":"Strengthening this means getting more deliberate about *which* struggle to keep — not all friction is useful, and the skill is picking the right kind."},"pilot":{"name":"The Pilot","fromModel":"Pilot vs. Autopilot Judgment","short":"You know when to take the controls back.","description":"Your edge isn't doing the routine work yourself — it's knowing the moment a situation has drifted outside what the automation should be trusted to handle.","growth":"Strengthening this means noticing your reflexes for handing off get quieter over time — and rebuilding a periodic habit of checking in even when things look calm."},"cartographer":{"name":"The Cartographer","fromModel":"The GPS-Navigator Problem","short":"You build the map, not just the route.","description":"You're not satisfied with getting the task done — you want to understand the terrain well enough to navigate it without the tool next time.","growth":"Strengthening this means slowing down occasionally to ask 'could I do this again without help?' — and treating 'no' as useful information, not a failure."},"chef":{"name":"The Chef","fromModel":"The Recipe Cook vs. The Chef","short":"You improvise when the plan breaks.","description":"You're at your best when the situation doesn't match any known procedure — that's where your judgment, not your process-following, is the actual asset.","growth":"Strengthening this means deliberately practicing on ill-defined problems — the kind with no clean recipe — rather than only the ones you already know how to solve."},"reviser":{"name":"The Reviser","fromModel":"Rolling Release, Not Long-Term Support","short":"You treat your own beliefs as a draft, not a final version.","description":"You expect your mental models to need regular updates, not rare overhauls — and you notice when you're clinging to a way of thinking mostly out of familiarity.","growth":"Strengthening this means scheduling your own model-review, rather than waiting for a crisis or a failure to force the update."}},"MODEL_ORDER":["auditor","exoskeleton","strain","pilot","cartographer","chef","reviser"],"SCENARIOS":[{"id":"s1","prompt":"An AI tool hands you a finished summary of a long report. It reads cleanly and looks complete.","options":{"auditor":"You pick two or three specific claims and trace them back to the source before using it.","exoskeleton":"You ask yourself whether relying on this tool is making you faster, or making you dependent.","strain":"You deliberately read the original report yourself first, before looking at the summary.","pilot":"You skim it for anything that feels off enough to warrant a closer read, and otherwise move on.","cartographer":"You use it, but pause to make sure you could explain the report's core argument without it.","chef":"You treat it as a starting draft and rework the parts that don't fit how you'd actually present this.","reviser":"You notice you've started trusting this tool's summaries more than you did a few months ago, and ask if that trust is still earned."}},{"id":"s2","prompt":"A colleague shares a data-driven recommendation that an AI tool helped them build. The logic sounds confident and well-organized.","options":{"auditor":"You ask where the underlying numbers came from before agreeing with the recommendation.","exoskeleton":"You consider whether your colleague could have reached this same conclusion without the tool.","strain":"You work through the reasoning yourself on paper, rather than just accepting the summary as given.","pilot":"You trust it unless something about the specific stakes of this decision raises your guard.","cartographer":"You ask your colleague to walk you through their own understanding of it, not just the output.","chef":"You look for the one assumption in it that wouldn't hold if the situation were slightly different.","reviser":"You notice this is the third time this month you've deferred to an AI-assisted recommendation, and consider whether that pattern is right."}},{"id":"s3","prompt":"You're reviewing a document that mixes your own writing with AI-suggested edits, and it's hard to tell which parts are which anymore.","options":{"auditor":"You go line by line and check each factual claim against something you can verify independently.","exoskeleton":"You ask whether using this tool for editing is sharpening your own writing instincts or dulling them.","strain":"You redraft a section from scratch yourself, just to keep the muscle active.","pilot":"You focus your attention on the sections with the highest stakes, and let the rest go.","cartographer":"You try to reconstruct, from memory, what your original argument was before the edits.","chef":"You rewrite the parts that feel generic or safe, since those are usually where the tool played it too straight.","reviser":"You realize your editing process has quietly changed over the last year, and think about whether the new version is actually better."}},{"id":"s4","prompt":"You've started using an AI tool for a task you used to do fully by hand. It's noticeably faster now.","options":{"auditor":"You still double-check the output against your own judgment before finalizing anything.","exoskeleton":"You ask yourself whether you could still do this task unassisted if the tool were unavailable tomorrow.","strain":"You occasionally do the task the old way on purpose, so the skill doesn't fade.","pilot":"You let the tool run the routine version, and stay alert for the moment a case doesn't fit the pattern.","cartographer":"You make sure you understand *why* the tool's output works, not just that it works.","chef":"You use the speed to spend more time on the parts of the task that actually require your judgment.","reviser":"You revisit, every so often, whether this tool is still the best way to do this task or just the familiar one."}},{"id":"s5","prompt":"A new team member relies heavily on AI tools for a skill you spent years building manually.","options":{"auditor":"You watch for whether they can catch it when the tool gets something wrong.","exoskeleton":"You wonder whether the tool is accelerating their skill-building or substituting for it entirely.","strain":"You suggest they try the task unaided occasionally, so they build the underlying capability too.","pilot":"You trust their process as long as their judgment holds up when something unusual happens.","cartographer":"You ask them to explain their reasoning, not just show you the output.","chef":"You watch how they handle situations the tool wasn't built for — that tells you what they actually know.","reviser":"You think about whether the skill you built manually is still the right skill to be teaching, given the tools available now."}},{"id":"s6","prompt":"You notice a capability you used to be confident in feels a little rustier than it used to.","options":{"auditor":"You test yourself against a case with a known right answer, to see how much has actually slipped.","exoskeleton":"You realize the tool you've been leaning on may be responsible, and start using it more selectively.","strain":"You deliberately take on a task the hard way to rebuild the muscle.","pilot":"You decide it's fine, as long as you can still step in when a situation actually calls for it.","cartographer":"You go back to basics and rebuild your own understanding from the ground up.","chef":"You look for an unusual version of the task to practice on, not just a routine one.","reviser":"You treat this as expected — skills shift as tools shift, and you update what you consider 'core' accordingly."}},{"id":"s7","prompt":"You're about to start a difficult task, and an AI tool could make the first steps much easier.","options":{"auditor":"You plan to use the tool, but check its early suggestions carefully before building on them.","exoskeleton":"You think about whether skipping the hard first steps will cost you something later.","strain":"You do the first attempt yourself, unassisted, before bringing the tool in at all.","pilot":"You let the tool handle the parts that don't need your judgment, and take over where it does.","cartographer":"You want to struggle with it enough to actually understand the shape of the problem.","chef":"You use the tool for structure, but keep the creative decisions for yourself.","reviser":"You ask whether your instinct to make this easier is actually serving you, or just avoiding discomfort."}},{"id":"s8","prompt":"You're designing a learning experience for others and could let an AI tool remove most of the friction from it.","options":{"auditor":"You make sure any AI-smoothed content is still factually solid before using it.","exoskeleton":"You ask whether removing the friction will leave learners weaker in the skill later.","strain":"You keep some of the difficulty in on purpose, because you know it's where the real learning happens.","pilot":"You remove friction where it's just tedious, and preserve it where it's actually instructive.","cartographer":"You want learners to leave with a mental map, not just a completed exercise.","chef":"You build in at least one moment where there's no clear procedure, so they have to improvise.","reviser":"You reconsider whether your old assumptions about 'good design' still apply now that tools have changed."}},{"id":"s9","prompt":"Midway through a hard problem, you're tempted to just ask an AI tool for the answer.","options":{"auditor":"You'd take the answer, but verify it thoroughly before trusting it.","exoskeleton":"You think about whether taking the shortcut here costs you the skill you're trying to build.","strain":"You push through a bit longer on your own first, even though it would be faster to just ask.","pilot":"You ask, but only after deciding this particular problem doesn't require you to build the skill yourself.","cartographer":"You want to at least understand the path to the answer, not just receive it.","chef":"You use the answer as one data point, but still work out your own approach around it.","reviser":"You notice how often you reach for this shortcut lately, and think about what that trend is costing you."}},{"id":"s10","prompt":"An AI-assisted process has been running smoothly for weeks without your close attention.","options":{"auditor":"You still spot-check its output periodically, even though nothing has gone wrong.","exoskeleton":"You check whether your own skills in this area are still sharp, or have quietly faded.","strain":"You occasionally do a manual pass yourself, just to keep your own judgment calibrated.","pilot":"You stay mostly hands-off, but keep a clear sense of what would make you step back in.","cartographer":"You make sure you still understand how the process works, not just that it's working.","chef":"You watch for the first sign of an unusual case, since that's where your judgment actually matters.","reviser":"You ask whether 'smoothly' is still the right standard, or whether your bar has quietly dropped."}},{"id":"s11","prompt":"Something about an AI-generated recommendation feels slightly off, but you can't immediately say why.","options":{"auditor":"You dig into the specific claims until you can pin down exactly what's bothering you.","exoskeleton":"You consider whether you're second-guessing it out of real judgment, or just discomfort with the tool.","strain":"You rework the recommendation yourself from scratch to see if you land somewhere different.","pilot":"You trust the instinct and pause the process until you understand the discomfort.","cartographer":"You try to map out the reasoning behind the recommendation until the mismatch becomes clear.","chef":"You treat the discomfort as a sign this situation doesn't fit the tool's usual pattern.","reviser":"You ask whether this feeling is new, or whether you've been ignoring it for a while."}},{"id":"s12","prompt":"You're deciding how much oversight to give an AI-assisted workflow that a team relies on daily.","options":{"auditor":"You build in regular checks on a sample of its output, regardless of how well it's been performing.","exoskeleton":"You think about whether the team's own skills are staying sharp under this workflow.","strain":"You keep at least one step in the process manual, so people don't lose the underlying skill.","pilot":"You set clear conditions for when a human needs to step back in, and otherwise let it run.","cartographer":"You make sure the team understands the logic of the workflow, not just how to operate it.","chef":"You pay closest attention to how the workflow handles the cases it wasn't designed for.","reviser":"You plan to revisit this oversight level in a few months, assuming your needs will have shifted."}},{"id":"s13","prompt":"You used an AI tool to get through a task quickly, and it worked. The task is done.","options":{"auditor":"You go back and check that the output actually holds up before calling it finished.","exoskeleton":"You consider whether you actually learned anything from doing it this way.","strain":"You wish you'd struggled with part of it more, since that's usually when it sticks.","pilot":"You're satisfied, since this wasn't the kind of task where you needed the deeper understanding anyway.","cartographer":"You realize you could not fully repeat this task unassisted, and that bothers you.","chef":"You think about how you'd handle a version of this task the tool couldn't help with.","reviser":"You ask whether 'done' is really the right measure of success here, or just the easiest one."}},{"id":"s14","prompt":"You're explaining a process to someone else that you've mostly done with AI assistance yourself.","options":{"auditor":"You make sure what you're teaching them is actually accurate, not just what the tool told you.","exoskeleton":"You wonder if you're equipped to teach the underlying skill, or just the tool-assisted version of it.","strain":"You have them try a piece of it unassisted, so they build real understanding, not just familiarity.","pilot":"You focus your teaching on the judgment calls, since the tool handles the routine parts.","cartographer":"You realize you need to understand this more deeply yourself before you can really teach it.","chef":"You emphasize the parts of the process that require improvisation, since that's what will actually transfer.","reviser":"You notice your own understanding of this process has changed since you started using the tool, and account for that."}},{"id":"s15","prompt":"You're asked to do a task you've done many times with AI help, but this time without access to the tool.","options":{"auditor":"You're less worried about doing it than about not having anything to double-check your work against.","exoskeleton":"You notice immediately how much you've come to depend on the tool for this.","strain":"You find it harder than expected, and realize you'd let the skill atrophy without noticing.","pilot":"You manage fine, because you'd always kept your own judgment in the loop even while using the tool.","cartographer":"You realize you understand the destination but not the route — you can't reconstruct how you'd normally get there.","chef":"You improvise a new approach, since your old one leaned heavily on the tool's structure.","reviser":"You treat this as useful information about a gap you didn't know you had, and plan to address it."}},{"id":"s16","prompt":"A situation comes up that doesn't match any process or template you've used before, AI-assisted or not.","options":{"auditor":"You look for a similar precedent and check carefully whether it actually applies here.","exoskeleton":"You notice this is exactly the kind of situation where a tool won't be much help.","strain":"You expect this to be hard, and treat that difficulty as normal rather than a problem.","pilot":"You recognize this is a moment to rely fully on your own judgment rather than any automated process.","cartographer":"You draw on your broader understanding of the domain, rather than a specific procedure.","chef":"You improvise a new approach by combining pieces of things that have worked in different situations before.","reviser":"You treat your existing assumptions as a starting point to revise, not a fixed answer to apply."}},{"id":"s17","prompt":"An AI tool gives you a standard, well-worn approach to a problem that feels a little unusual.","options":{"auditor":"You check carefully whether the standard approach actually fits this particular case.","exoskeleton":"You consider whether leaning on the standard approach here would cost you the chance to build real range.","strain":"You resist the easy path and work through what's actually different about this situation.","pilot":"You use the standard approach as a baseline, but watch closely for where it doesn't fit.","cartographer":"You try to understand why this situation feels different before deciding whether to follow the standard path.","chef":"You adapt the standard approach rather than applying it as-is, since something here doesn't quite match the mold.","reviser":"You ask whether the 'standard approach' itself is still the right default, or just the familiar one."}},{"id":"s18","prompt":"You're the person a team turns to when a plan falls apart and there's no clear next step.","options":{"auditor":"You start by checking which parts of the original plan's assumptions actually failed.","exoskeleton":"You think about which of your own skills, not the tools, got the team this far in the first place.","strain":"You're comfortable in the discomfort of not having a ready answer yet.","pilot":"You know this is exactly the moment your judgment matters most, tools or no tools.","cartographer":"You draw on your overall sense of the terrain, since no specific map covers this exact situation.","chef":"You piece together a new approach on the fly from things that have worked in different contexts before.","reviser":"You're willing to abandon the original plan's core assumptions entirely, not just patch around them."}},{"id":"s19","prompt":"A belief you've held for a long time about how to do your work well no longer seems to fit how things actually work now.","options":{"auditor":"You look for concrete evidence before deciding whether the old belief still holds.","exoskeleton":"You consider whether the belief was ever really about your own capability, or just a habit.","strain":"You're willing to sit with the discomfort of not having a settled answer for a while.","pilot":"You update your approach only in the specific situations where the old belief clearly stops working.","cartographer":"You try to understand what's actually changed in the underlying landscape, not just the symptom.","chef":"You treat this as a chance to improvise a new approach rather than defend the old one.","reviser":"You actively revise the belief, since you expect ideas like this to need regular updates now."}},{"id":"s20","prompt":"Someone challenges an approach you've relied on for years, and their reasoning is hard to dismiss.","options":{"auditor":"You check their claims carefully before deciding whether to take the challenge seriously.","exoskeleton":"You ask whether your old approach was building your skill, or just something you'd gotten used to.","strain":"You resist the urge to defend your approach immediately, and sit with the discomfort of being wrong.","pilot":"You weigh whether this is a case where your old judgment should override theirs, or the reverse.","cartographer":"You try to understand their reasoning fully before deciding whether it changes your map.","chef":"You look for what you could adapt from their approach, even if you don't adopt it wholesale.","reviser":"You treat this as a normal, expected part of keeping your thinking current, not a personal setback."}},{"id":"s21","prompt":"Looking back, you realize the way you approached your work a year ago is noticeably different from how you'd approach it today.","options":{"auditor":"You're glad you've gotten better at checking your own work, specifically.","exoskeleton":"You notice which of your capabilities have grown, and which may have quietly weakened.","strain":"You recognize the hard parts of last year's approach are exactly what built this year's improvement.","pilot":"You notice you're better now at knowing when to trust your own judgment versus lean on a tool.","cartographer":"You realize your understanding of the underlying work has deepened, not just your speed at it.","chef":"You notice you're more comfortable now improvising when something doesn't fit a known pattern.","reviser":"You expect this same shift to happen again within the next year, and that feels normal rather than alarming."}}]};
+  const MODELS = DATA.MODELS;
+  const MODEL_ORDER = DATA.MODEL_ORDER;
+  const SCENARIOS = DATA.SCENARIOS;
+
+  // ---- Google Form relay configuration ----
+  // Replace this with your form's real "formResponse" action URL, e.g.:
+  // https://docs.google.com/forms/d/e/1FAIpQLSc.../formResponse
+  const GOOGLE_FORM_ACTION_URL = "PASTE_YOUR_GOOGLE_FORM_ACTION_URL_HERE";
+  // Replace these with your form's real entry.XXXXXXXXX field names.
+  const GOOGLE_FORM_ENTRY_IDS = {
+    name: "entry.000000001",
+    email: "entry.000000002",
+    dominant: "entry.000000003",
+    leastPracticed: "entry.000000004",
+    fullProfile: "entry.000000005",
+    skippedCount: "entry.000000006",
+  };
+  const RELAY_CONFIGURED = GOOGLE_FORM_ACTION_URL.indexOf("PASTE_YOUR") === -1;
+
+  let order = [];
+  let current = 0;
+  let answers = {}; // scenarioId -> modelKey
+  let skippedCount = 0;
+  let lastResult = null; // { ranked, top, bottom, name, email }
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function showView(name) {
+    document.querySelectorAll('[data-view]').forEach(el => el.classList.remove('active'));
+    document.querySelector('[data-view="' + name + '"]').classList.add('active');
+  }
+
+  function startQuiz() {
+    order = shuffle(SCENARIOS);
+    current = 0;
+    answers = {};
+    skippedCount = 0;
+    showView('quiz');
+    renderScenario();
+  }
+
+  function renderScenario() {
+    const scenario = order[current];
+    document.getElementById('progressLabel').textContent = 'Question ' + (current + 1) + ' of ' + order.length;
+    document.getElementById('progressFill').style.width = ((current) / order.length * 100) + '%';
+    document.getElementById('scenarioPrompt').textContent = scenario.prompt;
+
+    const modelKeys = shuffle(Object.keys(scenario.options));
+    const container = document.getElementById('optionsContainer');
+    container.innerHTML = '';
+    modelKeys.forEach(function(key) {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.type = 'button';
+      btn.textContent = scenario.options[key];
+      if (answers[scenario.id] === key) btn.classList.add('selected');
+      btn.addEventListener('click', function() {
+        answers[scenario.id] = key;
+        setTimeout(function() { advance(); }, 180);
+        container.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+      container.appendChild(btn);
+    });
+
+    document.getElementById('backBtn').disabled = current === 0;
+  }
+
+  function advance() {
+    if (current < order.length - 1) {
+      current++;
+      renderScenario();
+    } else {
+      goToCapture();
+    }
+  }
+
+  document.getElementById('startBtn').addEventListener('click', startQuiz);
+
+  document.getElementById('backBtn').addEventListener('click', function() {
+    if (current > 0) { current--; renderScenario(); }
+  });
+
+  document.getElementById('skipBtn').addEventListener('click', function() {
+    const scenario = order[current];
+    if (answers[scenario.id] === undefined) {
+      skippedCount++;
+    }
+    advance();
+  });
+
+  document.getElementById('retakeBtn').addEventListener('click', function() {
+    startQuiz();
+  });
+
+  function goToCapture() {
+    document.getElementById('progressFill').style.width = '100%';
+    const banner = document.getElementById('skipWarningBanner');
+    const intro = document.getElementById('skipWarningIntro');
+    if (skippedCount > 0) {
+      const plural = skippedCount === 1 ? 'question' : 'questions';
+      banner.textContent = 'You skipped ' + skippedCount + ' ' + plural + '. Your profile is built from fewer data points as a result, so treat this result as a rougher read than a full pass would give you. Consider retaking it if a more precise picture would help.';
+      banner.style.display = 'block';
+      intro.style.display = 'none';
+    } else {
+      banner.style.display = 'none';
+      intro.style.display = 'none';
+    }
+    showView('capture');
+  }
+
+  function validEmail(v) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  }
+
+  document.getElementById('captureSubmitBtn').addEventListener('click', function() {
+    const nameEl = document.getElementById('nameInput');
+    const emailEl = document.getElementById('emailInput');
+    const nameErr = document.getElementById('nameError');
+    const emailErr = document.getElementById('emailError');
+
+    const name = nameEl.value.trim();
+    const email = emailEl.value.trim();
+    let ok = true;
+
+    if (!name) { nameErr.classList.add('visible'); ok = false; } else { nameErr.classList.remove('visible'); }
+    if (!validEmail(email)) { emailErr.classList.add('visible'); ok = false; } else { emailErr.classList.remove('visible'); }
+
+    if (!ok) return;
+
+    finish(name, email);
+  });
+
+  function submitToGoogleForm(payload) {
+    if (!RELAY_CONFIGURED) return;
+    try {
+      document.getElementById('relayForm').action = GOOGLE_FORM_ACTION_URL;
+      document.getElementById('relayName').name = GOOGLE_FORM_ENTRY_IDS.name;
+      document.getElementById('relayEmail').name = GOOGLE_FORM_ENTRY_IDS.email;
+      document.getElementById('relayDominant').name = GOOGLE_FORM_ENTRY_IDS.dominant;
+      document.getElementById('relayLeastPracticed').name = GOOGLE_FORM_ENTRY_IDS.leastPracticed;
+      document.getElementById('relayFullProfile').name = GOOGLE_FORM_ENTRY_IDS.fullProfile;
+      document.getElementById('relaySkippedCount').name = GOOGLE_FORM_ENTRY_IDS.skippedCount;
+
+      document.getElementById('relayName').value = payload.name;
+      document.getElementById('relayEmail').value = payload.email;
+      document.getElementById('relayDominant').value = payload.dominant;
+      document.getElementById('relayLeastPracticed').value = payload.leastPracticed;
+      document.getElementById('relayFullProfile').value = payload.fullProfile;
+      document.getElementById('relaySkippedCount').value = String(payload.skippedCount);
+
+      document.getElementById('relayForm').submit();
+    } catch (e) {
+      // Best-effort relay; never block the results from showing.
+    }
+  }
+
+  function finish(name, email) {
+    const tally = {};
+    MODEL_ORDER.forEach(k => tally[k] = 0);
+    Object.values(answers).forEach(function(key) {
+      if (tally[key] !== undefined) tally[key]++;
+    });
+
+    const ranked = MODEL_ORDER
+      .map(k => ({ key: k, count: tally[k] }))
+      .sort((a, b) => b.count - a.count);
+
+    const top = ranked[0];
+    const bottom = ranked[ranked.length - 1];
+    const maxCount = Math.max(1, top.count);
+
+    const topModel = MODELS[top.key];
+    document.getElementById('archName').textContent = topModel.name;
+    document.getElementById('archTag').textContent = topModel.short;
+    document.getElementById('archDesc').textContent = topModel.description;
+
+    const bottomModel = MODELS[bottom.key];
+    document.getElementById('growthName').textContent = bottomModel.name;
+    document.getElementById('growthBody').textContent = bottomModel.growth;
+
+    const rankList = document.getElementById('rankList');
+    rankList.innerHTML = '';
+    ranked.forEach(function(r, i) {
+      const m = MODELS[r.key];
+      const li = document.createElement('li');
+      li.className = 'rank-row';
+      const pct = Math.round((r.count / maxCount) * 100);
+      li.innerHTML =
+        '<span class="rank-num">' + (i + 1) + '</span>' +
+        '<span class="rank-name">' + m.name + '</span>' +
+        '<span class="rank-bar-track"><span class="rank-bar-fill" style="width:' + pct + '%"></span></span>';
+      rankList.appendChild(li);
+    });
+
+    const fullProfileStr = ranked.map(function(r, i) {
+      return (i + 1) + '. ' + MODELS[r.key].name + ' (' + r.count + ')';
+    }).join(' | ');
+
+    lastResult = {
+      name: name,
+      email: email,
+      ranked: ranked,
+      top: topModel,
+      bottom: bottomModel,
+      fullProfileStr: fullProfileStr,
+      skippedCount: skippedCount,
+    };
+
+    submitToGoogleForm({
+      name: name,
+      email: email,
+      dominant: topModel.name,
+      leastPracticed: bottomModel.name,
+      fullProfile: fullProfileStr,
+      skippedCount: skippedCount,
+    });
+
+    document.getElementById('saveStatus').textContent = '';
+    showView('results');
+  }
+
+  document.getElementById('downloadBtn').addEventListener('click', async function() {
+    const statusEl = document.getElementById('saveStatus');
+    if (!lastResult) return;
+
+    const lines = [
+      'AI LEARNING MENTAL MODELS',
+      '',
+      'Name: ' + lastResult.name,
+      'Email: ' + lastResult.email,
+      'Date: ' + new Date().toLocaleDateString(),
+      '',
+      'DOMINANT MODEL: ' + lastResult.top.name,
+      lastResult.top.short,
+      lastResult.top.description,
+      '',
+      'LEAST-PRACTICED MODEL: ' + lastResult.bottom.name,
+      lastResult.bottom.growth,
+      '',
+      'FULL PROFILE (most to least practiced):',
+    ];
+    lastResult.ranked.forEach(function(r, i) {
+      lines.push((i + 1) + '. ' + MODELS[r.key].name + ' — ' + r.count + ' of 21');
+    });
+    if (lastResult.skippedCount > 0) {
+      lines.push('');
+      lines.push('Note: ' + lastResult.skippedCount + ' question(s) were skipped, so this profile is a rougher read than a full pass would give.');
+    }
+
+    const text = lines.join('\n');
+    const filename = 'ai-learning-mental-models-results.txt';
+
+    try {
+      const downloads = await claude.use('downloads');
+      if (downloads) {
+        await downloads.save({ filename: filename, data: text });
+        statusEl.textContent = 'Saved.';
+        return;
+      }
+    } catch (e) {
+      // fall through to manual fallback
+    }
+
+    // Fallback when the downloads capability is unavailable in this view:
+    // open a data URL the person can save manually.
+    try {
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
+      statusEl.textContent = 'Saved.';
+    } catch (e2) {
+      statusEl.textContent = 'Could not save automatically — copy your results manually.';
+    }
+  });
+})();
+</script>
+</body>
+</html>
