@@ -41,4 +41,6 @@ A PM brings a real task: a metric they're about to commit to, a research synthes
 
 This is the live, on-demand counterpart to the AI Opportunity sections in the [job aid library](../job-aid-reviewer/). The job aids teach the pattern in writing at each step. The coach lets a PM practice it on whatever's in front of them today.
 
+To check whether the coach actually protects productive struggle under pressure, I built an evaluation suite for it: the [AI Coach Eval Kit](https://github.com/RudyardPM/ai-coach-eval-kit).
+
 It ships with a default four-stage product framework (Idea, Draft, Build and Release, Evaluate) but switches to the client's own stages when they have them.
