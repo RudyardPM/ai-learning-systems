@@ -2,7 +2,7 @@
 
 Most training ends when the session does. People nod, go back to their desks, and do what they did before. I build learning systems that keep working after I'm gone, and lately a lot of that work has been building AI agents ("skills") that coach, review, and practice alongside people in their real work.
 
-This repo holds an assessment and four of those skills. Each folder has the actual source (a `SKILL.md` with the instructions the AI follows, or the assessment page) and a README that explains the problem it solves and why I designed it the way I did.
+This repo holds an assessment, four of those skills and a voice agent. Each folder has the actual source (a `SKILL.md` with the instructions the AI follows, or the assessment page) and a README that explains the problem it solves and why I designed it the way I did.
 
 ## Start here: the assessment
 
@@ -16,6 +16,9 @@ This repo holds an assessment and four of those skills. Each folder has the actu
 | [Job Aid Improvement Interviewer](job-aid-improvement-interviewer/) | Walks the author through each proposed fix, one decision at a time | Turns a long review into fast, owned decisions instead of a wall of feedback |
 | [AI Product Coach](pm-potential-ai-product-coach/) | Coaches a PM live through using AI as a thinking partner on real work | Builds the habit of pressure-testing your own thinking, not outsourcing it |
 | [PM Interview Mock Tutor](pm-interview-mock-tutor/) | Runs a realistic mock PM interview with short tutor nudges in the moment | Practice with feedback at the moment of the mistake, not in a summary afterward |
+| [Story Tool](story-tool-voice-agent/) | A voice agent that guides someone to notice the story behind a frustrating pattern and retell it | Reaches the first moment of insight, then hands off to a coach |
+
+I also built an evaluation suite that tests whether the AI Product Coach actually teaches: the **[AI Coach Eval Kit](https://github.com/RudyardPM/ai-coach-eval-kit)**.
 
 ## How they fit together
 
